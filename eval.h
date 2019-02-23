@@ -22,6 +22,5 @@ void eval(int cmdNum, int* argcNum, char*** argv, char* record);
 pid_t Fork();
 bool internalCmd(char*** argv, int cmdNum, int* argcNum, int k);
 void redirection(int argc, char*** argv, int* out, int n, int cmdNum, int* argcNum);
-void waitFront(int cmdNum);
 
 #endif //UNTITLED_EVAL_H

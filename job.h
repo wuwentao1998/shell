@@ -33,5 +33,6 @@ void clearJob(struct job_t* job);
 void initJobs(struct job_t* jobs);
 void addJob(struct job_t* jobs, char* cmdline, pid_t lastPid);
 void listJobs(struct job_t* jobs);
+void deleteJob(pid_t id);
 
 #endif //PROJECT_JOB_H

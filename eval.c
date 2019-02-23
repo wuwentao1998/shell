@@ -1,19 +1,23 @@
 //
 // Created by wwt on 10/4/18.
 //
-
+//#define DEBUG
 #include "eval.h"
 
 pid_t pid[MAXCMD] = { 0 };
 pid_t pid2 = 0;
 extern bool isBG;
 extern struct job_t jobs[MAXJOBS];
+extern sigset_t mask_all, prev_one, mask_one;
+
+int flag = 0;
 
 void eval(int cmdNum, int* argcNum, char*** argv, char* record)
 {
     if (argv[0][0] == NULL)
         return;
 
+    sigprocmask(SIG_BLOCK, &mask_one, &prev_one);
 
     int fd[MAXCMD][2] ;
     int k = -1;
@@ -32,10 +36,14 @@ void eval(int cmdNum, int* argcNum, char*** argv, char* record)
     if(cmdNum == 1)
     {
         if (internalCmd(argv, cmdNum, argcNum, 0))
+        {
+            sigprocmask(SIG_SETMASK, &prev_one, NULL);
             return;
+        }
 
         if ((pid2 = Fork()) == 0)
         {
+            sigprocmask(SIG_SETMASK, &prev_one, NULL);
             int out[2] = { -1, -1 };
             redirection(argcNum[0], argv, out, 0, cmdNum, argcNum);
 
@@ -54,8 +62,8 @@ void eval(int cmdNum, int* argcNum, char*** argv, char* record)
                 freeArgv(argv, cmdNum, argcNum);
                 exit(1);
             }
-            
-            
+
+
             if (execvp(argv[0][0], argv[0]) == -1)//第二个参数不确定正确
             {
                 fprintf(stderr, "%s: command not found\n", argv[0][0]);
@@ -65,109 +73,102 @@ void eval(int cmdNum, int* argcNum, char*** argv, char* record)
             }
         }
 
-        if (isBG)
-            addJob(jobs, record, pid2);
-
-        int status;
-        if(!isBG)
-        {
-            if (waitpid(pid2, &status, 0) < 0)
-            {
-                fprintf(stderr, "waitpid error\n");
-                fflush(stderr);
-                freeArgv(argv, cmdNum, argcNum);
-                exit(1);
-            }
-        }
-
-        return;
+        sigprocmask(SIG_BLOCK, &mask_all, NULL);
+        addJob(jobs, record, pid2);
     }
     else
     {
         for (k = 0; k < cmdNum; k++)
             if ((pid[k] = Fork()) == 0)
                 break;
-    }
 
-
-    for (int i = 0; i < cmdNum; i++)
-    {
-        if (k == i)
+        for (int i = 0; i < cmdNum; i++)
         {
-            for (int j = 1; j < cmdNum; j++)
+            if (k == i)
             {
-                if (i == j)
-                    close(fd[i][1]);
-                else if (j == (i + 1))
-                    close(fd[j][0]);
-                else
+                sigprocmask(SIG_SETMASK, &prev_one, NULL);
+                for (int j = 1; j < cmdNum; j++)
                 {
-                    close(fd[j][0]);
-                    close(fd[j][1]);
+                    if (i == j)
+                        close(fd[i][1]);
+                    else if (j == (i + 1))
+                        close(fd[j][0]);
+                    else
+                    {
+                        close(fd[j][0]);
+                        close(fd[j][1]);
+                    }
+
+                    if (i != cmdNum - 1)
+                        dup2(fd[i + 1][1], STDOUT_FILENO);
+
+                    if (i != 0)
+                        dup2(fd[i][0], STDIN_FILENO);
                 }
 
-                if (i != cmdNum - 1)
-                    dup2(fd[i + 1][1], STDOUT_FILENO);
+                if (internalCmd(argv, cmdNum, argcNum, k))
+                {
+                    freeArgv(argv, cmdNum, argcNum);
+                    exit(0);
+                }
 
-                if (i != 0)
-                    dup2(fd[i][0], STDIN_FILENO);
+                int out[2] = { -1, -1 };
+
+                redirection(argcNum[k], argv, out, k, cmdNum, argcNum);
+
+                if (argv[k][0] == NULL)
+                {
+                    fprintf(stderr, "error: missing program\n");
+                    fflush(stderr);
+                    freeArgv(argv, cmdNum, argcNum);
+                    exit(1);
+                }
+
+                if (execvp(argv[k][0], argv[k]) == -1)//第二个参数不确定正确
+                {
+                    fprintf(stderr, "%s: command not found\n", argv[k][0]);
+                    fflush(stderr);
+                    freeArgv(argv, cmdNum, argcNum);
+                    exit(1);
+                }
+
             }
-
-            if (internalCmd(argv, cmdNum, argcNum, k))
-            {
-                freeArgv(argv, cmdNum, argcNum);
-                exit(0);
-
-            }
-
-            int out[2] = { -1, -1 };
-
-            redirection(argcNum[k], argv, out, k, cmdNum, argcNum);
-
-            if (argv[k][0] == NULL)
-            {
-                fprintf(stderr, "error: missing program\n");
-                fflush(stderr);
-                freeArgv(argv, cmdNum, argcNum);
-                exit(1);
-            }
-
-            if (execvp(argv[k][0], argv[k]) == -1)//第二个参数不确定正确
-            {
-                fprintf(stderr, "%s: command not found\n", argv[k][0]);
-                fflush(stderr);
-                freeArgv(argv, cmdNum, argcNum);
-                exit(1);
-            }
-
         }
-    }
 
+        for(int i = 1; i < cmdNum; i++)
+        {
+            close(fd[i][0]);
+            close(fd[i][1]);
+        }
 
-    for(int i = 1; i < cmdNum; i++)
-    {
-        close(fd[i][0]);
-        close(fd[i][1]);
-    }
-
-    if (isBG)
-    {
         for(int i = MAXCMD - 1; i >= 0; i--)
         {
             if (pid[i] == 0)
                 continue;
             else
             {
+                sigprocmask(SIG_BLOCK, &mask_all, NULL);
                 addJob(jobs, record, pid[i]);
                 break;
             }
         }
-
     }
 
     if (!isBG)
-        waitFront(cmdNum);
+    {
+        while(flag == 0)
+            sigsuspend(&prev_one);
+    }
 
+    sigprocmask(SIG_SETMASK, &prev_one, NULL);
+    #ifdef DEBUG
+        if(!isBG)
+        {
+            while (flag == 0)
+            ;
+            flag = 0;
+        }
+    #endif
 }
 
 
@@ -206,7 +207,7 @@ bool internalCmd(char*** argv, int cmdNum, int* argcNum, int k)
         }
         else
             cd(dir);
-        
+
         return 1;
     }
     if (!strcmp(command, "pwd"))
@@ -480,15 +481,4 @@ void redirection(int argc, char*** argv, int* out, int n, int cmdNum, int* argcN
 
 }
 
-
-void waitFront(int cmdNum)
-{
-
-    for (int i = 0; i < cmdNum; i++)
-    {
-        int status;
-        wait(&status);
-    }
-   
-}
 

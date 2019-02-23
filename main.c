@@ -4,7 +4,7 @@
 
 #include "parse.h"
 #include "eval.h"
-
+//#define DEBUG
 
 bool isEval = false;
 int cmdNum = 0;
@@ -14,10 +14,10 @@ extern bool isBG;
 
 int main(void)
 {
+    initJobs(jobs);
     signal(SIGINT, sigint_handler);
     signal(SIGCHLD, sigchld_handler);
     signal(SIGPIPE, sigpipe_handler);
-    initJobs(jobs);
 
 label1:
     while (true)
@@ -322,8 +322,8 @@ label1:
             fflush(stdout);
             exit(0);
         }
-	isEval = true;
- 
+	    isEval = true;
+
 
         int* argcNum = (int*)calloc(cmdNum , sizeof(int));
         char*** argv = (char***)calloc(cmdNum , sizeof(char**));

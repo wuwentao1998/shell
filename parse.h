@@ -14,8 +14,9 @@
 #include "macro.h"
 #include "free.h"
 #include "job.h"
+extern int cmdNum;
 
-void parse(char*** argv, char *cmd[MAXCMD], int* argcNum, int cmdNum);
+void parse(char*** argv, char *cmd[MAXCMD], int* argcNum);
 int parseLine(char*** argv, char* cmd, int i);
 
 #endif //UNTITLED_PARSE_H

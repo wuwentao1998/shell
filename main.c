@@ -4,20 +4,34 @@
 
 #include "parse.h"
 #include "eval.h"
-
+#include "signal.h"
+//#define DEBUG
 
 bool isEval = false;
 int cmdNum = 0;
+int emit_prompt = 1;
 
 extern struct job_t jobs[MAXJOBS];
 extern bool isBG;
+extern int flag;
 
-int main(void)
+void usage();
+
+int main(int argc, char* argv[])
 {
-    signal(SIGINT, sigint_handler);
-    signal(SIGCHLD, sigchld_handler);
-    signal(SIGPIPE, sigpipe_handler);
+    char c;
+    while ((c = getopt(argc, argv, "hp")) != EOF)
+    {
+        if (c == 'p')
+            emit_prompt = 0;
+        else
+            usage();
+    }
+
     initJobs(jobs);
+    Signal(SIGINT, sigint_handler);
+    Signal(SIGCHLD, sigchld_handler);
+    Signal(SIGPIPE, SIG_IGN);
 
 label1:
     while (true)
@@ -33,8 +47,11 @@ label1:
         bool isredirction[2] = {false, false};//0 for < , 1 for > or >>
         bool isDoubleQuation = false;
         bool isSingleQuation = false;
+        flag = 0;
 
-        fprintf(stdout, "mumsh $ ");
+        fflush(stdout);
+        if (emit_prompt == 1)
+            fprintf(stdout, "mumsh $ ");
         fflush(stdout);
 
         if ((ch = fgetc(stdin)) != EOF)
@@ -322,8 +339,8 @@ label1:
             fflush(stdout);
             exit(0);
         }
-	isEval = true;
- 
+	    isEval = true;
+
 
         int* argcNum = (int*)calloc(cmdNum , sizeof(int));
         char*** argv = (char***)calloc(cmdNum , sizeof(char**));
@@ -338,11 +355,11 @@ label1:
             cmd[cmdNum - 1][i] = ' ';
         }
 
-        parse(argv, cmd, argcNum, cmdNum);
+        parse(argv, cmd, argcNum);
 
         record[recordNum++] = '\0';
 
-        eval(cmdNum, argcNum, argv, record);
+        eval(argcNum, argv, record);
 
         freeArgv(argv, cmdNum, argcNum);
     }
@@ -350,5 +367,11 @@ label1:
 }
 
 
-
+void usage(void)
+{
+    printf("Usage: shell [-hp]\n");
+    printf("   -h   print this message\n");
+    printf("   -p   do not emit a command prompt\n");
+    exit(1);
+}
 

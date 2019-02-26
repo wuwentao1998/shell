@@ -5,7 +5,7 @@
 #include "parse.h"
 
 
-void parse(char*** argv, char *cmd[MAXCMD], int* argcNum, int cmdNum)
+void parse(char*** argv, char *cmd[MAXCMD], int* argcNum)
 {
     for (int i = 0; i< cmdNum; i++)
         argcNum[i] = parseLine(argv, cmd[i], i);

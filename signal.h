@@ -24,4 +24,6 @@
 void sigint_handler();
 void sigchld_handler();
 void sigpipe_handler();
+handler_t *Signal(int signum, handler_t *handler);
+void unix_error(char *msg);
 #endif //UNTITLED_SIGNAL_H

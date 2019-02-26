@@ -27,7 +27,6 @@ void initJobs(struct job_t* jobs)
         clearJob(&jobs[i]);
     }
 
-
     sigfillset(&mask_all);
     sigemptyset(&mask_one);
     sigaddset(&mask_one, SIGCHLD);
@@ -83,8 +82,18 @@ void deleteJob(pid_t id)
     for (int i = 0; i < MAXJOBS; i++) {
         if (jobs[i].pid == id) {
             clearJob(&jobs[i]);
-            return;
+            nextjid = maxjid(jobs) + 1;
+            break;
         }
     }
+}
 
+int maxjid(struct job_t *jobs)
+{
+    int i, max=0;
+
+    for (i = 0; i < MAXJOBS; i++)
+	if (jobs[i].jid > max)
+	    max = jobs[i].jid;
+    return max;
 }

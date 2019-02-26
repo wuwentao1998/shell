@@ -9,10 +9,14 @@ pid_t pid2 = 0;
 extern bool isBG;
 extern struct job_t jobs[MAXJOBS];
 extern sigset_t mask_all, prev_one, mask_one;
+extern int cmdNum;
+
+// 子进程和父进程不共享全局变量
+// int evecvpError = 0;
 
 int flag = 0;
 
-void eval(int cmdNum, int* argcNum, char*** argv, char* record)
+void eval( int* argcNum, char*** argv, char* record)
 {
     if (argv[0][0] == NULL)
         return;
@@ -54,15 +58,6 @@ void eval(int cmdNum, int* argcNum, char*** argv, char* record)
                 freeArgv(argv, cmdNum, argcNum);
                 exit(1);
             }
-
-            if (execvp(argv[0][0], argv[0]) == -1)//第二个参数不确定正确
-            {
-                fprintf(stderr, "%s: command not found\n", argv[0][0]);
-                fflush(stderr);
-                freeArgv(argv, cmdNum, argcNum);
-                exit(1);
-            }
-
 
             if (execvp(argv[0][0], argv[0]) == -1)//第二个参数不确定正确
             {
@@ -158,9 +153,11 @@ void eval(int cmdNum, int* argcNum, char*** argv, char* record)
 
     if (!isBG)
     {
-        while(flag == 0)
+        // 可能会出现有的进程终止了，有的还没有，要等所有都终止才行
+        while(flag < cmdNum)
             sigsuspend(&prev_one);
     }
+    //TODO: 后台任务时父进程先与子进程结束进入下一轮时先打印mumsh $怎么办
 
     sigprocmask(SIG_SETMASK, &prev_one, NULL);
     #ifdef DEBUG

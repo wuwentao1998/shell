@@ -62,7 +62,7 @@ void sigchld_handler()
 
 // 如果通过管道连接多个进程，当前面进程终止时，最后一个进程却在无限循环，则会陷入死循环
 // 解决方法：添加WNOHANG参数，如果没有已经停止的进程直接返回
-// FIXME: 为什么jobs还在，deleteJob没有使用吗
+// TODO: 为什么jobs还在，deleteJob没有使用吗
     while ((childPid = waitpid(-1, &status, WNOHANG)) > 0)
     {
         for (int i = 0; i < MAXJOBS; ++i) {
@@ -76,13 +76,33 @@ void sigchld_handler()
         }
     }
 
-    flag = 1;
+    flag++;
 }
 
-void sigpipe_handler()
+handler_t *Signal(int signum, handler_t *handler)
 {
+    struct sigaction action, old_action;
 
+    action.sa_handler = handler;
+    sigemptyset(&action.sa_mask); /* block sigs of type being handled */
+    action.sa_flags = SA_RESTART; /* restart syscalls if possible */
+
+    if (sigaction(signum, &action, &old_action) < 0)
+	unix_error("Signal error");
+    return (old_action.sa_handler);
 }
+
+
+void unix_error(char *msg)
+{
+    fprintf(stdout, "%s\n", msg);
+    exit(1);
+}
+
+// void sigpipe_handler()
+// {
+//     return;
+// }
 
 
 

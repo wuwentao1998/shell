@@ -26,16 +26,16 @@ void sigint_handler()
         if (cmdNum > 1)
         {
             for (int i = 0; i < cmdNum; ++i)
-		{
-			while(pid[i] == 0)
-				continue;
+            {
+                while(pid[i] == 0)
+                    continue;
 
-			kill(pid[i],SIGINT);
-		}
+                kill(pid[i],SIGINT);
+            }
         }
         else
         {
-             while(pid2 == 0)
+            while(pid2 == 0)
                 continue;
 
             kill(pid2, SIGINT);
@@ -60,7 +60,10 @@ void sigchld_handler()
         fflush(stdout);
     #endif
 
-    while ((childPid = waitpid(-1, &status, 0)) > 0)
+// 如果通过管道连接多个进程，当前面进程终止时，最后一个进程却在无限循环，则会陷入死循环
+// 解决方法：添加WNOHANG参数，如果没有已经停止的进程直接返回
+// FIXME: 为什么jobs还在，deleteJob没有使用吗
+    while ((childPid = waitpid(-1, &status, WNOHANG)) > 0)
     {
         for (int i = 0; i < MAXJOBS; ++i) {
             if(jobs[i].pid == childPid)

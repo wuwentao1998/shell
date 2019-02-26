@@ -11,6 +11,7 @@ int cmdNum = 0;
 
 extern struct job_t jobs[MAXJOBS];
 extern bool isBG;
+extern int flag;
 
 int main(void)
 {
@@ -33,6 +34,7 @@ label1:
         bool isredirction[2] = {false, false};//0 for < , 1 for > or >>
         bool isDoubleQuation = false;
         bool isSingleQuation = false;
+        flag = 0;
 
         fprintf(stdout, "mumsh $ ");
         fflush(stdout);

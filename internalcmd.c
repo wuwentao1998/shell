@@ -5,7 +5,6 @@
 
 #include "internalcmd.h"
 
-
 void pwd()
 {
     char buf[MAXLINE] = { 0 };

@@ -82,6 +82,7 @@ void eval(int cmdNum, int* argcNum, char*** argv, char* record)
             if ((pid[k] = Fork()) == 0)
                 break;
 
+        // 父进程在k = cmdNum 前保持循环，所以只有子进程才能通过 k == i
         for (int i = 0; i < cmdNum; i++)
         {
             if (k == i)
@@ -135,6 +136,7 @@ void eval(int cmdNum, int* argcNum, char*** argv, char* record)
             }
         }
 
+        // 这一段属于父进程
         for(int i = 1; i < cmdNum; i++)
         {
             close(fd[i][0]);
@@ -149,7 +151,7 @@ void eval(int cmdNum, int* argcNum, char*** argv, char* record)
             {
                 sigprocmask(SIG_BLOCK, &mask_all, NULL);
                 addJob(jobs, record, pid[i]);
-                break;
+                break; // ?
             }
         }
     }
@@ -307,7 +309,6 @@ void redirection(int argc, char*** argv, int* out, int n, int cmdNum, int* argcN
             {
                 free(argv[n][i]);
                 argv[n][i] = NULL;
-
             }
 
             int fd = open(argv[n][i + 1], O_WRONLY | O_CREAT | O_APPEND, 0644);
@@ -323,7 +324,6 @@ void redirection(int argc, char*** argv, int* out, int n, int cmdNum, int* argcN
             {
                 free(argv[n][i+1]);
                 argv[n][i+1] = NULL;
-
             }
 
         }
@@ -369,7 +369,6 @@ void redirection(int argc, char*** argv, int* out, int n, int cmdNum, int* argcN
             {
                 free(argv[n][i]);
                 argv[n][i] = NULL;
-
             }
 
             int fd = open(argv[n][i + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -384,7 +383,6 @@ void redirection(int argc, char*** argv, int* out, int n, int cmdNum, int* argcN
             {
                 free(argv[n][i+1]);
                 argv[n][i+1] = NULL;
-
             }
 
         }
@@ -452,11 +450,8 @@ void redirection(int argc, char*** argv, int* out, int n, int cmdNum, int* argcN
             {
                 free(argv[n][i+1]);
                 argv[n][i+1] = NULL;
-
             }
-
         }
-
     }
 
     if(!judge)
@@ -475,10 +470,8 @@ void redirection(int argc, char*** argv, int* out, int n, int cmdNum, int* argcN
                     }
                 }
             }
-
         }
     }
-
 }
 
 

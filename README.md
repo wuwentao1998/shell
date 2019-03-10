@@ -9,7 +9,7 @@ This repository contains a bash-like command line interface, which supports feat
 
 ## Build
 ``` bash
-mkdir cmake-build-debug && cd cmake-build-debug
+cd ./code
 
 cmake -DCMAKE_C_COMPILER=clang
 

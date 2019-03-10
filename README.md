@@ -1,6 +1,30 @@
-# shell
-This repository contain a simple shell program. It is a project of my operating system course. The specific features I realize are described in the file p1.pdf.
+# Shell
 
-In addition, this file didn't realize some features like fg and many signal processing, which has been realized in my another repository CMU15213/shellLab.
+This repository contains a bash-like command line interface, which supports features like pipe, redirection and background jobs.
 
-If I have time some day, I will combine the two programs into a more complex shell.
+## Envoirment
+- OS: Ubuntu 18.04.1
+
+- Compiler: clang 6.0.0
+
+## Build
+``` bash
+mkdir cmake-build-debug && cd cmake-build-debug
+
+cmake -DCMAKE_C_COMPILER=clang
+
+make
+```
+
+## Usage
+``` bash
+./mumsh
+```
+
+## Features
+
+
+
+## License
+
+[MIT License](https://github.com/tangbc/vue-virtual-scroll-list/blob/master/LICENSE)
